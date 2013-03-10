@@ -29,6 +29,9 @@ However, if the structure is not consistent:
 The `Child 1` element will be attached to a previous `h2` element, which is `Root Child` in this example.
 
 
+## Known limitations
+There is currently no attempt to detect collisions between generated heading slugs.
+
 
 ## Dependencies
 *tocify* uses [jQuery](http://jquery.com) and [Bootstrap CSS](http://twitter.github.com/bootstrap).
