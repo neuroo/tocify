@@ -1,11 +1,14 @@
+// `tocify.js`
+// Minimalist Table of Contents generator for Markdown generated
+// HTML documents.
+// Developed by Romain Gaucher (@rgaucher), March 2013
 (function(){
   var toc_root = "#toc";
   var toc_elmt = $(toc_root);
-  var toc_stack = {};
   var doc_anchor_char = "&#xb6;";
   var toc_max_depth = 3;
   var toc_document_root = "#document-container";
-  var toc_document_root_headers = "#document-container > article > :header";
+  var toc_document_root_headers = toc_document_root + " > article > :header";
 
   if (toc_elmt === undefined) {
     console.log("The `toc_root` element must exist at this point...");
