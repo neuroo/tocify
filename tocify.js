@@ -2,13 +2,17 @@
 // Minimalist Table of Contents generator for Markdown generated
 // HTML documents.
 // Developed by Romain Gaucher (@rgaucher), March 2013
-(function(){
+(function($){
   var toc_root = "#toc";
   var toc_elmt = $(toc_root);
   var doc_anchor_char = "&#xb6;";
   var toc_max_depth = 3;
   var toc_document_root = "#document-container";
-  var toc_document_root_headers = toc_document_root + " > article > :header";
+  var toc_document_root_headers = [];
+  for (var i = 1; i<=toc_max_depth; i++) {
+    toc_document_root_headers.push(toc_document_root + " h" + i.toString());
+  }
+  toc_document_root_headers = toc_document_root_headers.join(", ");
 
   if (toc_elmt === undefined) {
     console.log("The `toc_root` element must exist at this point...");
@@ -19,12 +23,7 @@
                .replace(/-/gi, "_")
                .replace(/\s/gi, "-")
                .toLowerCase();  
-  }
-
-  String.prototype.selectorEscape = function() {
-      return this.replace(/[!"#$%&'()*+,.\/:;<=>?@\[\\\]^`{|}~]/g, 
-                          '\\$&');
-  }
+  };
 
   // We assume lots of stuff here. For now, for instance, this
   // only works with simple heading elements:
@@ -47,40 +46,42 @@
       .attr("href", "#" + slug)
       .attr("class", "toc-anchor-char")
       .html(doc_anchor_char)
-    )
+    );
   }
 
 
   function extractIndentLevel(headerTagName) {
     if (/^h(\d)$/i.test(headerTagName)) {
-      return parseInt(headerTagName.charAt(1));
+      return parseInt(headerTagName.charAt(1), 10);
     }
     return 1; // Default ident level is top-level
   }
 
 
-  function appendTocElmt(current_title, current_slug, parent_elmt) {
-    parent_elmt.append(
+  function appendTocElmt(current_title, current_slug, parent_elmt, add_slug) {
+    var toc_element =
       $("<li />")
       .html(
         $("<a />")
         .attr("href", "#" + current_slug)
         .text(current_title)
-      )
-      .prepend('<i class="icon-minus"></i>')
-      .append(
-        $("<ol />")
-        .attr('slug-sel', current_slug)
-        .text("")
-      )
-    )
-    return $("ol[slug-sel='" + current_slug.selectorEscape() + "']");
+      );
+
+    //  .prepend('<span class="glyphicon glyphicon-minus"></span>');
+
+    if (add_slug) {
+      var slug_element = $("<ol />").text("");
+      toc_element = toc_element.append(slug_element);
+    }
+    parent_elmt.append(toc_element);
+    if (add_slug) {
+      return slug_element;
+    }
   }
 
 
   function retrieveHeaders(root_elmt, root_toc) {
     var indent_level = 1;
-    var cur_elmt = null;
     var sized_stack = {
       0 : root_toc
     };
@@ -88,25 +89,29 @@
     $(toc_document_root_headers).each(function(index) {
       indent_level = extractIndentLevel(this.nodeName);
 
-      if (indent_level > toc_max_depth)
-        return true;
-
       if (!sized_stack.hasOwnProperty(indent_level)) {
         sized_stack[indent_level] = null;
       }
 
       // Extract info, append anchors
-      current_title = extractTitle(this);
-      current_slug = current_title.slugify();
+      var current_title = extractTitle(this);
+      var current_slug = $(this).attr("id");
+      if (!current_slug) {
+        current_slug = current_title.slugify();
+      }
       appendSlugishAnchor(this, current_slug);
 
       // Parent element to which we append a new toc-entry
       parent_elmt = sized_stack[indent_level - 1];
       if (parent_elmt !== null) {
-        cur_elmt = appendTocElmt(current_title, current_slug, parent_elmt);
-
-        // Register our latest elmt for the stack
-        sized_stack[indent_level] = cur_elmt;
+	var add_slug = true;
+	if (indent_level >= toc_max_depth) {
+		add_slug = false;
+	}
+        var cur_elmt = appendTocElmt(current_title, current_slug, parent_elmt, add_slug);
+        if (add_slug) {
+          sized_stack[indent_level] = cur_elmt;
+        }
       }
     });
   }
@@ -128,4 +133,4 @@
   retrieveHeaders(getDocumentRoot(), 
                   getRootElmt());
 
-})();
+})(window.jQuery);
